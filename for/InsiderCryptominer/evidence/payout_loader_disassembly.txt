@@ -1,0 +1,240 @@
+  ╎╎╎╎╎╎╎   0x000ca9b0      20488b         and byte [rax - 0x75], cl
+  ╎╎╎╎╎╎╎   0x000ca9b3      07             invalid
+  ╎╎╎╎╎╎╎   0x000ca9b4      ff5030         call qword [rax + 0x30]
+  ╎╎╎╎╎╎╎   0x000ca9b7      4883c408       add rsp, 8
+  ╎╎╎╎╎╎╎   0x000ca9bb      5b             pop rbx
+  ╎╎╎╎╎╎╎   0x000ca9bc      5d             pop rbp
+  ╎╎╎╎╎╎└─< 0x000ca9bd      e9beb5f9ff     jmp 0x65f80
+  ╎╎╎╎╎╎    0x000ca9c2      660f1f440000   nop word [rax + rax]
+  ╎╎╎╎╎╎    0x000ca9c8      4889ef         mov rdi, rbp
+  ╎╎╎╎╎╎    0x000ca9cb      e8c0bff7ff     call 0x46990
+  ╎╎╎└────< 0x000ca9d0      eb98           jmp 0xca96a
+  ╎╎╎ ╎╎    0x000ca9d2      660f1f440000   nop word [rax + rax]
+  ╎╎╎ ╎╎    0x000ca9d8      4889ef         mov rdi, rbp
+  ╎╎╎ ╎╎    0x000ca9db      e8b0bff7ff     call 0x46990
+  └───────< 0x000ca9e0      ebcb           jmp 0xca9ad
+   ╎╎ ╎╎    0x000ca9e2      660f1f440000   nop word [rax + rax]
+   ╎╎ ╎╎    0x000ca9e8      b8ffffffff     mov eax, 0xffffffff         ; -1
+   ╎╎ ╎╎    0x000ca9ed      f00fc101       lock xadd dword [rcx], eax
+   ╎╎ ╎└──< 0x000ca9f1      e96fffffff     jmp 0xca965
+   ╎╎ ╎     0x000ca9f6      662e0f1f84..   nop word cs:[rax + rax]
+   ╎╎ ╎     0x000caa00      b8ffffffff     mov eax, 0xffffffff         ; -1
+   ╎╎ ╎     0x000caa05      f00fc101       lock xadd dword [rcx], eax
+   ╎└─────< 0x000caa09      eb9d           jmp 0xca9a8
+   ╎  ╎     0x000caa0b      0f1f440000     nop dword [rax + rax]
+   ╎  ╎     0x000caa10      488b4500       mov rax, qword [rbp]
+   ╎  ╎     0x000caa14      4889ef         mov rdi, rbp
+   ╎  ╎     0x000caa17      48c7450800..   mov qword [rbp + 8], 0
+   ╎  ╎     0x000caa1f      ff5010         call qword [rax + 0x10]
+   ╎  ╎     0x000caa22      488b4500       mov rax, qword [rbp]
+   ╎  ╎     0x000caa26      4889ef         mov rdi, rbp
+   ╎  ╎     0x000caa29      ff5018         call qword [rax + 0x18]
+   ╎  └───< 0x000caa2c      e939ffffff     jmp 0xca96a
+   ╎        0x000caa31      0f1f800000..   nop dword [rax]
+   ╎        0x000caa38      488b4500       mov rax, qword [rbp]
+   ╎        0x000caa3c      4889ef         mov rdi, rbp
+   ╎        0x000caa3f      48c7450800..   mov qword [rbp + 8], 0
+   ╎        0x000caa47      ff5010         call qword [rax + 0x10]
+   ╎        0x000caa4a      488b4500       mov rax, qword [rbp]
+   ╎        0x000caa4e      4889ef         mov rdi, rbp
+   ╎        0x000caa51      ff5018         call qword [rax + 0x18]
+   └──────< 0x000caa54      e954ffffff     jmp 0xca9ad
+            0x000caa59      90             nop
+            0x000caa5a      660f1f440000   nop word [rax + rax]
+            0x000caa60      4155           push r13
+            0x000caa62      4154           push r12
+            0x000caa64      55             push rbp
+            0x000caa65      53             push rbx
+            0x000caa66      4889fb         mov rbx, rdi
+            0x000caa69      4883ec78       sub rsp, 0x78
+            0x000caa6d      83fe02         cmp esi, 2
+        ┌─< 0x000caa70      0f8456020000   je 0xcaccc
+        │   0x000caa76      83fe0f         cmp esi, 0xf
+       ┌──< 0x000caa79      0f844d020000   je 0xcaccc
+       ││   0x000caa7f      83fe01         cmp esi, 1
+      ┌───< 0x000caa82      0f8539020000   jne 0xcacc1
+      │││   0x000caa88      e8f3bef9ff     call 0x66980
+      │││   0x000caa8d      488d359cdf..   lea rsi, [0x00238a30]       ; "%s \x1b[1;37mreloading encrypted payout profile\x1b[0m"
+      │││   0x000caa94      bf05000000     mov edi, 5
+      │││   0x000caa99      4889c2         mov rdx, rax
+      │││   0x000caa9c      31c0           xor eax, eax
+      │││   0x000caa9e      e85db9f9ff     call 0x66400
+      │││   0x000caaa3      4c8d442410     lea r8, [rsp + 0x10]
+      │││   0x000caaa8      4c8d5c2470     lea r11, [rsp + 0x70]
+      │││   0x000caaad      f30f7e0dcb..   movq xmm1, qword [0x0023bc80] ; [0x23bc80:8]=0x1807f6e5d4c3b2a1
+      │││   0x000caab5      488d3d24c0..   lea rdi, [0x00246ae0]
+      │││   0x000caabc      4c89c6         mov rsi, r8
+      │││   0x000caabf      49ba11273a..   movabs r10, 0x8e7d68594c3a2711
+      │││   0x000caac9      49b990abbc..   movabs r9, 0x2f1efdecdbcab90
+      │││   0x000caad3      66662e0f1f..   nop word cs:[rax + rax]
+      │││   0x000caade      6690           nop
+      │││   0x000caae0      488b1f         mov rbx, qword [rdi]
+      │││   0x000caae3      4c891424       mov qword [rsp], r10
+      │││   0x000caae7      660f6fc1       movdqa xmm0, xmm1
+      │││   0x000caaeb      4c894c2408     mov qword [rsp + 8], r9
+      │││   0x000caaf0      4889d9         mov rcx, rbx
+      │││   0x000caaf3      4889d8         mov rax, rbx
+      │││   0x000caaf6      66480f6ecb     movq xmm1, rbx
+      │││   0x000caafb      89da           mov edx, ebx
+      │││   0x000caafd      48c1e928       shr rcx, 0x28
+      │││   0x000cab01      48c1e830       shr rax, 0x30
+      │││   0x000cab05      0fb6c9         movzx ecx, cl
+      │││   0x000cab08      0fb6c0         movzx eax, al
+      │││   0x000cab0b      c1e204         shl edx, 4
+      │││   0x000cab0e      c1e010         shl eax, 0x10
+      │││   0x000cab11      c1e108         shl ecx, 8
+      │││   0x000cab14      09c1           or ecx, eax
+      │││   0x000cab16      4889d8         mov rax, rbx
+      │││   0x000cab19      48c1e820       shr rax, 0x20
+      │││   0x000cab1d      0fb6c0         movzx eax, al
+      │││   0x000cab20      09c1           or ecx, eax
+      │││   0x000cab22      4889d8         mov rax, rbx
+      │││   0x000cab25      48c1e838       shr rax, 0x38
+      │││   0x000cab29      c1e018         shl eax, 0x18
+      │││   0x000cab2c      09c1           or ecx, eax
+      │││   0x000cab2e      89d8           mov eax, ebx
+      │││   0x000cab30      c1e805         shr eax, 5
+      │││   0x000cab33      31d0           xor eax, edx
+      │││   0x000cab35      01d8           add eax, ebx
+      │││   0x000cab37      35b0e2ab94     xor eax, 0x94abe2b0
+      │││   0x000cab3c      29c1           sub ecx, eax
+      │││   0x000cab3e      89c8           mov eax, ecx
+      │││   0x000cab40      89ca           mov edx, ecx
+      │││   0x000cab42      c1e204         shl edx, 4
+      │││   0x000cab45      c1e805         shr eax, 5
+      │││   0x000cab48      31d0           xor eax, edx
+      │││   0x000cab4a      ba67bdb728     mov edx, 0x28b7bd67
+      │││   0x000cab4f      01c8           add eax, ecx
+      │││   0x000cab51      3545ada92b     xor eax, 0x2ba9ad45
+      │││   0x000cab56      29c3           sub ebx, eax
+      │││   0x000cab58      0f1f840000..   nop dword [rax + rax]
+      │││   0x000cab60      4189d4         mov r12d, edx
+      │││   0x000cab63      89d8           mov eax, ebx
+      │││   0x000cab65      4189dd         mov r13d, ebx
+      │││   0x000cab68      89d5           mov ebp, edx
+      │││   0x000cab6a      41c1ed05       shr r13d, 5
+      │││   0x000cab6e      41c1ec0b       shr r12d, 0xb
+      │││   0x000cab72      81c24786c861   add edx, 0x61c88647
+      │││   0x000cab78      c1e004         shl eax, 4
+      │││   0x000cab7b      4183e403       and r12d, 3
+      │││   0x000cab7f      4431e8         xor eax, r13d
+      │││   0x000cab82      42032ca4       add ebp, dword [rsp + r12*4]
+      │││   0x000cab86      01d8           add eax, ebx
+      │││   0x000cab88      31e8           xor eax, ebp
+      │││   0x000cab8a      29c1           sub ecx, eax
+      │││   0x000cab8c      89c8           mov eax, ecx
+      │││   0x000cab8e      89cd           mov ebp, ecx
+      │││   0x000cab90      c1ed05         shr ebp, 5
+      │││   0x000cab93      c1e004         shl eax, 4
+      │││   0x000cab96      31e8           xor eax, ebp
+      │││   0x000cab98      89d5           mov ebp, edx
+      │││   0x000cab9a      83e503         and ebp, 3
+      │││   0x000cab9d      01c8           add eax, ecx
+      │││   0x000cab9f      448b2cac       mov r13d, dword [rsp + rbp*4]
+      │││   0x000caba3      4101d5         add r13d, edx
+      │││   0x000caba6      4431e8         xor eax, r13d
+      │││   0x000caba9      29c3           sub ebx, eax
+      │││   0x000cabab      85d2           test edx, edx
+      │││   0x000cabad      75b1           jne 0xcab60
+      │││   0x000cabaf      89c8           mov eax, ecx
+      │││   0x000cabb1      4189cc         mov r12d, ecx
+      │││   0x000cabb4      89dd           mov ebp, ebx
+      │││   0x000cabb6      89da           mov edx, ebx
+      │││   0x000cabb8      c1e818         shr eax, 0x18
+      │││   0x000cabbb      41c1ec10       shr r12d, 0x10
+      │││   0x000cabbf      4883c608       add rsi, 8
+      │││   0x000cabc3      4883c708       add rdi, 8
+      │││   0x000cabc7      c1ed18         shr ebp, 0x18
+      │││   0x000cabca      0fb6c0         movzx eax, al
+      │││   0x000cabcd      450fb6e4       movzx r12d, r12b
+      │││   0x000cabd1      c1ea10         shr edx, 0x10
+      │││   0x000cabd4      48c1e008       shl rax, 8
+      │││   0x000cabd8      400fb6ed       movzx ebp, bpl
+      │││   0x000cabdc      0fb6d2         movzx edx, dl
+      │││   0x000cabdf      4c09e0         or rax, r12
+      │││   0x000cabe2      4989c5         mov r13, rax
+      │││   0x000cabe5      0fb6c5         movzx eax, ch
+      │││   0x000cabe8      0fb6c9         movzx ecx, cl
+      │││   0x000cabeb      4989c4         mov r12, rax
+      │││   0x000cabee      4c89e8         mov rax, r13
+      │││   0x000cabf1      48c1e008       shl rax, 8
+      │││   0x000cabf5      4c09e0         or rax, r12
+      │││   0x000cabf8      48c1e008       shl rax, 8
+      │││   0x000cabfc      4809c8         or rax, rcx
+      │││   0x000cabff      48c1e008       shl rax, 8
+      │││   0x000cac03      4809e8         or rax, rbp
+      │││   0x000cac06      48c1e008       shl rax, 8
+      │││   0x000cac0a      4809d0         or rax, rdx
+      │││   0x000cac0d      0fb6d7         movzx edx, bh
+      │││   0x000cac10      0fb6db         movzx ebx, bl
+      │││   0x000cac13      48c1e008       shl rax, 8
+      │││   0x000cac17      4809d0         or rax, rdx
+      │││   0x000cac1a      48c1e008       shl rax, 8
+      │││   0x000cac1e      4809d8         or rax, rbx
+      │││   0x000cac21      66480f6ed0     movq xmm2, rax
+      │││   0x000cac26      660fefc2       pxor xmm0, xmm2
+      │││   0x000cac2a      660fd646f8     movq qword [rsi - 8], xmm0
+      │││   0x000cac2f      4939f3         cmp r11, rsi
+      │││   0x000cac32      0f85a8feffff   jne 0xcaae0
+      │││   0x000cac38      0fb644246f     movzx eax, byte [rsp + 0x6f]
+      │││   0x000cac3d      8d50ff         lea edx, [rax - 1]
+      │││   0x000cac40      80fa07         cmp dl, 7
+      │││   0x000cac43      0f872e010000   ja 0xcad77
+      │││   0x000cac49      ba60000000     mov edx, 0x60               ; '`'
+      │││   0x000cac4e      4829c2         sub rdx, rax
+      │││   0x000cac51      4883fa5f       cmp rdx, 0x5f               ; '_'
+      │││   0x000cac55      0f8445010000   je 0xcada0
+      │││   0x000cac5b      c6042400       mov byte [rsp], 0
+      │││   0x000cac5f      31c9           xor ecx, ecx
+      │││   0x000cac61      4c01c2         add rdx, r8
+      │││   0x000cac64      66662e0f1f..   nop word cs:[rax + rax]
+      │││   0x000cac6f      66662e0f1f..   nop word cs:[rax + rax]
+      │││   0x000cac7a      660f1f440000   nop word [rax + rax]
+      │││   0x000cac80      0fb60424       movzx eax, byte [rsp]
+      │││   0x000cac84      4983c001       add r8, 1
+      │││   0x000cac88      413240ff       xor al, byte [r8 - 1]
+      │││   0x000cac8c      880424         mov byte [rsp], al
+      │││   0x000cac8f      4c39c2         cmp rdx, r8
+      │││   0x000cac92      75ec           jne 0xcac80
+      │││   0x000cac94      84c9           test cl, cl
+      │││   0x000cac96      0f84df000000   je 0xcad7b
+      │││   0x000cac9c      0fb60424       movzx eax, byte [rsp]
+      │││   0x000caca0      3cff           cmp al, 0xff
+      │││   0x000caca2      0f84d3000000   je 0xcad7b
+      │││   0x000caca8      e8d3bcf9ff     call 0x66980
+      │││   0x000cacad      488d35b4dd..   lea rsi, [0x00238a68]       ; "%s \x1b[1;32mpayout profile accepted\x1b[0m"
+      │││   0x000cacb4      bf05000000     mov edi, 5
+      │││   0x000cacb9      4889c2         mov rdx, rax
+      │││   0x000cacbc      e9ce000000     jmp 0xcad8f
+      └───> 0x000cacc1      4883c478       add rsp, 0x78
+       ││   0x000cacc5      5b             pop rbx
+       ││   0x000cacc6      5d             pop rbp
+       ││   0x000cacc7      415c           pop r12
+       ││   0x000cacc9      415d           pop r13
+       ││   0x000caccb      c3             ret
+       └└─> 0x000caccc      488b6b38       mov rbp, qword [rbx + 0x38]
+            0x000cacd0      660fefc0       pxor xmm0, xmm0
+            0x000cacd4      0f114330       movups xmmword [rbx + 0x30], xmm0
+            0x000cacd8      4885ed         test rbp, rbp
+            0x000cacdb      743a           je 0xcad17
+            0x000cacdd      488b4d08       mov rcx, qword [rbp + 8]
+            0x000cace1      488d5508       lea rdx, [rbp + 8]
+            0x000cace5      48b8010000..   movabs rax, 0x100000001     ; 4294967297
+            0x000cacef      4839c1         cmp rcx, rax
+            0x000cacf2      0f84f1000000   je 0xcade9
+            0x000cacf8      803d41631e..   cmp byte [0x002b1040], 0    ; [0x2b1040:1]=0
+            0x000cacff      0f84c8000000   je 0xcadcd
+            0x000cad05      8b4508         mov eax, dword [rbp + 8]
+            0x000cad08      8d50ff         lea edx, [rax - 1]
+            0x000cad0b      895508         mov dword [rbp + 8], edx
+            0x000cad0e      83f801         cmp eax, 1
+            0x000cad11      0f849f000000   je 0xcadb6
+            0x000cad17      488b6b18       mov rbp, qword [rbx + 0x18]
+            0x000cad1b      660fefc0       pxor xmm0, xmm0
+            0x000cad1f      0f114310       movups xmmword [rbx + 0x10], xmm0
+            0x000cad23      4885ed         test rbp, rbp
+            0x000cad26      7436           je 0xcad5e
+            0x000cad28      488b4d08       mov rcx, qword [rbp + 8]
+            0x000cad2c      488d5508       lea rdx, [rbp + 8]
+            0x000cad30      48b8010000..   movabs rax, 0x100000001     ; 4294967297
+            0x000cad3a      4839c1         cmp rcx, rax

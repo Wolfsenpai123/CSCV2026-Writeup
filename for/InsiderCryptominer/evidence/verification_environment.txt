@@ -1,0 +1,4 @@
+3.14.6
+pycryptodome==3.23.0
+python-snappy==0.7.3
+mnemonic==0.21

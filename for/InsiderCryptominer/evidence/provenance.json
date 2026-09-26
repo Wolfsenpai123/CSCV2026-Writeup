@@ -1,0 +1,15 @@
+{
+  "restored_on": "2026-09-26",
+  "source_session": "rollout-2026-09-25T01-39-34-01a0d713-7fe8-7ee0-b155-d0a2f0fe868d.jsonl",
+  "original_directory": "/home/kali/CTF/cscv/dist (1)",
+  "original_memory_present": false,
+  "source_lines": {
+    "initial_findings": 9,
+    "vault_recovery": 215,
+    "solver_creation_and_success": 469,
+    "crypto_results": 493,
+    "verified_replay": 502,
+    "vietnamese_writeup": 513
+  },
+  "reference": "https://github.com/FIA-FPT-Information-Assurance-Club/2026-Technical-Write-ups/tree/main/Pwnsec%20CTF%202026/Forensics/Blindsided"
+}

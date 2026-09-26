@@ -1,0 +1,6 @@
+{
+  "bip39_valid": true,
+  "derivation_path": "m/44'/118'/0'/0/0",
+  "public_key": "028e8b4fd6f245ef66cce90a571988425bf26b90fdf204068f1b0e4850030e4af2",
+  "matches_vault_public_key": true
+}

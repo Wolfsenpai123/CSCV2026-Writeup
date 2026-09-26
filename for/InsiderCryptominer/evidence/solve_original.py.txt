@@ -1,0 +1,107 @@
+#!/usr/bin/env python3
+"""Recover the two encrypted answers from mem.raw and complete the CTF quiz.
+Dependencies: pycryptodome python-snappy mnemonic
+Offsets below are file offsets in the supplied LiME image, discovered during analysis.
+"""
+from pathlib import Path
+import hashlib,json,re,socket,struct
+import snappy
+from Crypto.Cipher import AES
+from Crypto.Hash import keccak
+from mnemonic import Mnemonic
+
+BASE=Path(__file__).resolve().parent
+OUT=BASE/'recovered'
+OUT.mkdir(exist_ok=True)
+
+def recover():
+    with open(BASE/'mem.raw','rb') as f:
+        def read(offset,size):
+            f.seek(offset)
+            result=f.read(size)
+            assert len(result)==size
+            return result
+        # SQLite index leaf: 489 local bytes, 7-byte record header, 15-byte key.
+        local=read(0x5dd0e8fd,489)
+        overflow=read(0x5d1fe044,2518)
+        clone=snappy.decompress(local[22:]+overflow)
+        assert len(clone)==5192 and b'4532eb1bf34aa175' in clone
+        encrypted=bytes.fromhex(re.search(rb'__uint8array__([0-9a-f]+)',clone).group(1).decode())
+        derived=read(0x4f8dafe0,32)
+        cipher=bytes.fromhex('53e21003c11701f379068403f3ca21a9dfd3d310d49ce9b8d50ab56b23460801')
+        mac=hashlib.sha256(derived[16:]+cipher[16:]).hexdigest()
+        assert mac=='43f46daa1b4b46d5c301263984af14738c27f1551e97fff504b50184562294fd'
+        def aes(key,iv,data):
+            return AES.new(key,AES.MODE_CTR,nonce=b'',initial_value=bytes.fromhex(iv)).decrypt(data)
+        vault_key=aes(derived,'1679c885a9b62191443a1891922f9c2a',cipher)
+        counter=aes(vault_key,'8dc852f2ee34b2bad7de792db57c6f84',bytes.fromhex('463f2fc42804e54a6ea5cd7a73276a11'))
+        plain=json.loads(aes(vault_key,counter.hex(),encrypted))
+        phrase=plain['mnemonic']
+        assert Mnemonic('english').check(phrase)
+        # The mapped ciphertext page is nonresident; three other copies survive.
+        ciphertext=read(0x96107b20,96)
+        assert ciphertext==read(0x9be50b60,96)==read(0xa0c0dba0,96)
+    # Constants and mode recovered from SIGHUP handler at ELF offset 0xcaa60.
+    key=struct.unpack('<4I',bytes.fromhex('11273a4c59687d8e90abbccddeeff102'))
+    previous=bytes.fromhex('a1b2c3d4e5f60718')
+    payout_plain=b''
+    for off in range(0,96,8):
+        block=ciphertext[off:off+8]
+        a,b=struct.unpack('<2I',block)
+        total=0xc6ef3720
+        for _ in range(32):
+            b=(b-((((a<<4)^(a>>5))+a)^((total+key[(total>>11)&3])&0xffffffff)))&0xffffffff
+            total=(total-0x9e3779b9)&0xffffffff
+            a=(a-((((b<<4)^(b>>5))+b)^((total+key[total&3])&0xffffffff)))&0xffffffff
+        payout_plain+=bytes(x^y for x,y in zip(struct.pack('<2I',a,b),previous))
+        previous=block
+    padding=payout_plain[-1]
+    assert 1<=padding<=8 and payout_plain[-padding:]==bytes([padding])*padding
+    payout=payout_plain[:-padding].decode()
+    assert len(payout)==95
+    # Verify the Monero block-base58 encoding and Keccak checksum.
+    alphabet='123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
+    decoded=b''
+    for off in range(0,95,11):
+        block=payout[off:off+11]
+        number=0
+        for char in block:
+            number=number*58+alphabet.index(char)
+        decoded+=number.to_bytes(8 if len(block)==11 else 5,'big')
+    assert decoded[0]==18 and keccak.new(digest_bits=256,data=decoded[:-4]).digest()[:4]==decoded[-4:]
+    return phrase,payout
+
+def main():
+    phrase,payout=recover()
+    # Other answers are supported by the earlier browser, process, and image findings.
+    answers=['Keplr','1788604050','1788604175124','Vietdollar',phrase,'/tmp/kworker1',payout,'AIplsforgiveme']
+    (OUT/'accepted_answers.json').write_text(json.dumps(answers,indent=2)+'\n')
+    transcript=[]
+    with socket.create_connection(('113.20.103.55',1336),10) as connection:
+        connection.settimeout(15)
+        for answer in answers:
+            received=b''
+            while '➤'.encode() not in received:
+                chunk=connection.recv(65536)
+                if not chunk:
+                    raise RuntimeError('Challenge closed before all prompts')
+                received+=chunk
+            if b'Incorrect' in received:
+                raise RuntimeError(received.decode(errors='replace'))
+            transcript.append(received.decode(errors='replace'))
+            transcript.append(answer+'\n')
+            connection.sendall((answer+'\n').encode())
+        received=b''
+        while not re.search(rb'CSCV2026\{[^}]+\}',received):
+            chunk=connection.recv(65536)
+            if not chunk:
+                raise RuntimeError('Challenge closed without flag')
+            received+=chunk
+        transcript.append(received.decode(errors='replace'))
+    flag=re.search(rb'CSCV2026\{[^}]+\}',received).group().decode()
+    (OUT/'verified_replay.txt').write_text(''.join(transcript))
+    (OUT/'flag.txt').write_text(flag+'\n')
+    print(flag)
+
+if __name__=='__main__':
+    main()

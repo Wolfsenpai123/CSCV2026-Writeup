@@ -1,0 +1,15 @@
+{
+  "source": "Archived ciphertext and transcript; no new memory extraction or network request",
+  "mac_valid": true,
+  "bip39_valid": true,
+  "mnemonic": "impose uniform fish special tip divert express increase push glide invite area",
+  "derivation_path": "m/44'/118'/0'/0/0",
+  "public_key": "028e8b4fd6f245ef66cce90a571988425bf26b90fdf204068f1b0e4850030e4af2",
+  "public_key_matches_vault": true,
+  "xtea_padding_valid": true,
+  "monero_checksum_valid": true,
+  "payout_address": "425LXZNnbSkh1SyXdbBtvJdst6uab98knQi5BscyzkAKTPSnDDB4i2Ue5t9BxETLuuKNHnP4n8VjsaqtzprvGsf115Keabc",
+  "accepted_answers_in_archive": 8,
+  "flag_from_archived_server_transcript": "CSCV2026{ef14be7cddcc5adfbf0ac2dc68a690fa8f345731248ae69e2b8a43f8476f8331}",
+  "verification_date": "2026-09-26"
+}

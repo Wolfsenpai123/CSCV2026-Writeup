@@ -1,0 +1,404 @@
+---
+title: "CSCV 2026 — Điều tra ví Keplr và cryptominer từ RAM"
+ctf: "CSCV 2026"
+date: 2026-09-25
+category: forensics
+difficulty: unspecified
+points: null
+flag_format: "CSCV2026{...}"
+author: "Codex — hỗ trợ phân tích và biên soạn"
+---
+
+# CSCV 2026 — Điều tra ví Keplr và cryptominer từ RAM
+
+## Tổng quan
+
+Bài cho một bản thu thập filesystem `collect.zip` và ảnh bộ nhớ `mem.raw` của máy CentOS. Dịch vụ tại `113.20.103.55:1336` yêu cầu trả lời 8 câu hỏi về ví tiền điện tử, lịch sử trình duyệt, một chương trình đào coin và nội dung ảnh người dùng đã xem.
+
+Hai phần khó nhất là khôi phục recovery phrase đang được Keplr mã hóa và tìm địa chỉ nhận tiền bị giấu trong miner. Hướng giải là dùng MAC của Keplr để nhận diện khóa còn sót trong RAM, sau đó dựng lại executable của miner để reverse hàm giải mã payout profile.
+
+Các offset được gọi là **file offset** trong bài là vị trí byte trong `mem.raw`. Địa chỉ ảo, địa chỉ vật lý và offset trong ELF được ghi riêng; không thể dùng chúng thay thế nhau vì ảnh RAM có định dạng LiME.
+
+## 1. Xác định các dấu vết chính
+
+### Ví được cài trong Firefox
+
+Profile Firefox đang hoạt động là:
+
+```text
+/home/centos/.mozilla/firefox/ckxgkkcc.firefox155
+```
+
+Dữ liệu extension xác định add-on:
+
+```text
+ID:      keplr-extension@keplr.app
+Version: 0.13.37
+```
+
+Vì vậy, đáp án câu 1 là **Keplr**. Đây là tên ứng dụng ví; tên người dùng đặt cho tài khoản ví nằm trong vault và được hỏi riêng ở câu 4.
+
+Lịch sử `places.sqlite` ghi lần đầu truy cập `https://www.keplr.app/` với `visit_date`:
+
+```text
+1788604050357080
+```
+
+Firefox lưu trường này theo microsecond. Đề yêu cầu Unix timestamp theo giây, nên lấy phần nguyên sau khi chia cho một triệu:
+
+```text
+1788604050357080 // 1000000 = 1788604050
+```
+
+Mốc này tương ứng **2026-09-05 10:27:30 UTC**. Đáp án câu 2 là `1788604050`.
+
+Dữ liệu `extensions.json` khôi phục từ RAM ghi thời điểm cài Keplr là `1788604175124`. Giá trị đã ở đơn vị millisecond, đúng với yêu cầu câu 3, nên không đổi đơn vị.
+
+### Miner đã bị xóa khỏi filesystem
+
+Kết quả phân tích tiến trình xác định PID **7161**, tên `kworker1`, UID 1000. Mapping executable có đường dẫn:
+
+```text
+/tmp/kworker1 (deleted)
+```
+
+Bash history còn trong RAM chứa các thao tác:
+
+```bash
+chmod +x kworker1
+nohup ./kworker1 > out 2>&1 &
+rm -rf kworker1
+```
+
+Dấu `(deleted)` cho biết file đã bị unlink trong khi tiến trình vẫn còn chạy. Đáp án câu 6 là **`/tmp/kworker1`**; không đưa chuỗi chú thích `(deleted)` vào đường dẫn.
+
+Miner là bản XMRig 6.26.0 đổi tên thành `namqb`. Cấu hình nhúng chứa pool `172.24.106.17:3333` và trường `user` là `worker-7f3a91c2`. Worker ID này chưa cho biết địa chỉ nhận tiền, nên cần phân tích thêm phần payout profile.
+
+### Ảnh người dùng đã xem
+
+Firefox history ghi một ảnh từ Discord và bản tải xuống có tên:
+
+```text
+3dcd833c-2b43-4af4-9ebd-b8e6609dbc3b.webp
+```
+
+`recently-used.xbel` cũng ghi nhận file trong `/home/centos/Downloads/`. Kết quả khôi phục ảnh từ tiến trình Firefox cho thấy một tờ giấy ghi:
+
+```text
+AIplsforgiveme
+```
+
+Đây là đáp án câu 8. Chuỗi này đã được kiểm tra với MAC của vault và không khớp mật khẩu Keplr.
+
+## 2. Khôi phục mnemonic của Keplr
+
+### Ghép lại record từ các trang SQLite
+
+IndexedDB của Keplr đã bị xóa trên filesystem, nhưng dữ liệu vẫn còn trong ảnh RAM. Tìm chuỗi salt và vault ID giúp xác định trang chứa record:
+
+```text
+Vault ID:         4532eb1bf34aa175
+SQLite leaf page: file offset 0x5dd0e040
+```
+
+Payload của SQLite cell bắt đầu tại `0x5dd0e8fd`. Phần nằm trong leaf page dài 489 byte, gồm:
+
+| Thành phần | Kích thước |
+|---|---:|
+| SQLite record header | 7 byte |
+| Khóa của record | 15 byte |
+| Phần đầu blob Snappy | 467 byte |
+
+Record lớn hơn phần lưu tại chỗ, nên phần còn lại được đưa sang overflow page. Trang chứa phần tiếp theo được tìm thấy tại `0x5d1fe040`; bỏ 4 byte con trỏ đầu trang rồi đọc **2.518 byte** từ `0x5d1fe044`.
+
+Cách tìm trang này là thử ghép phần blob đã biết với các trang ứng viên, giải nén Snappy và kiểm tra cấu trúc đầu ra. Cặp trang đúng tạo thành blob nén 2.985 byte, giải nén ra **5.192 byte** dữ liệu Firefox structured clone.
+
+Record khôi phục chứa:
+
+```text
+keyRingName: Vietdollar
+keyRingType: mnemonic
+id:          4532eb1bf34aa175
+sensitive:   __uint8array__<ciphertext dạng hex>
+```
+
+Như vậy, câu 4 có đáp án **Vietdollar**. Mnemonic nằm trong trường `sensitive` và vẫn cần giải mã.
+
+### Dùng MAC để tìm khóa trong RAM
+
+Đối chiếu mã của extension **Keplr 0.13.37** từ XPI chính thức cho thấy cơ chế bảo vệ vault:
+
+```text
+D = PBKDF2-HMAC-SHA256(password, userPasswordSalt, 4000, 32)
+C = AES-CTR-Encrypt(D, userPasswordSalt, random_vault_key)
+M = SHA256(D[16:32] || C[16:32])
+```
+
+Trong đó `D` là khóa dẫn xuất 32 byte, `C` là `passwordCipher`, còn `M` là `userPasswordMac`. Các giá trị đọc được từ record:
+
+```text
+userPasswordSalt = 1679c885a9b62191443a1891922f9c2a
+passwordCipher   = 53e21003c11701f379068403f3ca21a9dfd3d310d49ce9b8d50ab56b23460801
+userPasswordMac  = 43f46daa1b4b46d5c301263984af14738c27f1551e97fff504b50184562294fd
+aesCounterSalt   = 8dc852f2ee34b2bad7de792db57c6f84
+aesCounterCipher = 463f2fc42804e54a6ea5cd7a73276a11
+```
+
+Điểm hữu ích là phép kiểm tra MAC chỉ cần **16 byte cuối của khóa dẫn xuất**, cùng 16 byte cuối ciphertext đã biết. Nếu khóa còn tồn tại trong RAM, có thể nhận diện trực tiếp mà không cần đoán mật khẩu.
+
+Scanner C duyệt các cửa sổ 16 byte, dịch mỗi lần 8 byte, rồi tính `SHA256(candidate || C[16:32])`. Scanner lọc trước bằng 128 bit đầu của MAC; ứng viên tìm được sau đó được xác minh bằng toàn bộ MAC 256 bit trong script giải mã.
+
+Kết quả khớp nằm tại file offset `0x4f8daff0`. Lấy thêm 16 byte ngay trước đó, thu được khóa đầy đủ tại **`0x4f8dafe0`**:
+
+```text
+435320f3ae0a4483dba68d01f0ec3a556e494f0e7b1c744916c3b78c34dddb8d
+```
+
+MAC của khóa này khớp hoàn toàn giá trị trong vault.
+
+### Giải mã và kiểm chứng kết quả
+
+Thực hiện ba phép AES-CTR nối tiếp:
+
+```text
+vault_key = AES-CTR-Decrypt(D, userPasswordSalt, passwordCipher)
+counter   = AES-CTR-Decrypt(vault_key, aesCounterSalt, aesCounterCipher)
+plaintext = AES-CTR-Decrypt(vault_key, counter, sensitive)
+```
+
+Khóa và counter thu được:
+
+```text
+vault_key = d1c1e07fa9bb035ef0dc0be88875d1cb6cfe3ec001a7b52514030ec5c81b0b0c
+counter   = 36fba37d0bcf2b53c0e7e73b54b9e828
+```
+
+Plaintext là JSON, trong đó trường `mnemonic` chứa đáp án câu 5:
+
+```text
+impose uniform fish special tip divert express increase push glide invite area
+```
+
+Có ba căn cứ kiểm chứng: JSON giải mã hợp lệ, phrase vượt qua checksum BIP39 và khóa công khai dẫn xuất theo `m/44'/118'/0'/0/0` trùng với khóa được lưu trong vault:
+
+```text
+028e8b4fd6f245ef66cce90a571988425bf26b90fdf204068f1b0e4850030e4af2
+```
+
+Dịch vụ challenge cũng chấp nhận phrase này. Bước giải không khôi phục mật khẩu người dùng; khóa dẫn xuất còn trong RAM đã đủ để mở vault.
+
+## 3. Reverse payout profile của miner
+
+### Dựng lại executable từ page table
+
+Các chuỗi của miner chứa thông báo `reloading encrypted payout profile`, `payout profile accepted` và `payout profile rejected`. Đây là dấu hiệu có một nhánh xử lý cấu hình nhận tiền được mã hóa.
+
+Executable có địa chỉ base `0x55c2d17fe000`. Để dựng lại các trang của nó, quét ELF header trong RAM rồi lần ngược các entry của page table x86-64, kiểm tra chỉ số tương ứng với địa chỉ ảo này. Chuỗi ánh xạ phù hợp là:
+
+```text
+0x6ed65000  PML4
+    -> 0x6efb0000  PDPT
+    -> 0x6efb1000  PD
+    -> 0x7e5cd000  PT
+    -> 0x65add000  trang vật lý chứa ELF header
+```
+
+Trang ELF header có file offset `0x65a7a040`. Dùng page-table root `0x6ed65000` để dịch địa chỉ ảo, sau đó ghép các segment `PT_LOAD` theo program header. Những trang không đọc được được đánh dấu bằng vùng zero trong bản dựng phục vụ phân tích; không coi bản này là bản sao nguyên vẹn của file gốc trên đĩa.
+
+### Nhận diện XTEA-CBC trong SIGHUP handler
+
+Dùng radare2 tìm xref tới chuỗi `reloading encrypted payout profile`, xác định hàm xử lý tại **ELF offset `0xcaa60`**. Nhánh nhận signal 1, tức `SIGHUP`, thực hiện giải mã 96 byte.
+
+Các phép dịch 4/5 bit, cập nhật tổng với hằng `0x9e3779b9`, tra bốn word của khóa và vòng lặp 32 lần cho thấy đây là **XTEA**. Sau khi giải mã mỗi block 8 byte, code XOR với ciphertext block trước; block đầu XOR với IV. Đây là chế độ **CBC**.
+
+Thông số lấy từ disassembly:
+
+```text
+Key:       11273a4c59687d8e90abbccddeeff102
+IV:        a1b2c3d4e5f60718
+Rounds:    32
+Word order: little-endian
+Ciphertext: 96 byte tại ELF offset 0x246ae0
+```
+
+### Tìm lại trang ciphertext còn thiếu
+
+Trang tương ứng với `base + 0x246ae0` không có entry hiện diện trong page table, nên bản dựng ELF trả về zero ở vùng này. Nếu giải mã ngay các byte zero thì kết quả sai.
+
+Các bản sao vùng dữ liệu của miner vẫn còn ở nơi khác trong ảnh RAM. Đối chiếu vị trí tương đối của những chuỗi đã biết trong vùng này cho phép tìm lại ciphertext. Ba bản sao 96 byte giống hệt nhau nằm tại:
+
+```text
+file offset 0x96107b20
+file offset 0x9be50b60
+file offset 0xa0c0dba0
+```
+
+Giải mã XTEA-CBC và bỏ padding `0x01` thu được chuỗi 95 ký tự:
+
+```text
+425LXZNnbSkh1SyXdbBtvJdst6uab98knQi5BscyzkAKTPSnDDB4i2Ue5t9BxETLuuKNHnP4n8VjsaqtzprvGsf115Keabc
+```
+
+Địa chỉ được kiểm tra bằng cách giải mã **block Base58 của Monero**: version byte bằng 18, tương ứng địa chỉ chuẩn trên mainnet, và checksum 4 byte khớp `Keccak-256(payload)[:4]`. Dịch vụ chấp nhận đây là đáp án câu 7.
+
+Bằng chứng xác định được địa chỉ nhận tiền trong cấu hình miner. Nó không chứng minh địa chỉ đã nhận được khoản thanh toán nào.
+
+## Đáp án và script tái hiện
+
+| Câu | Nội dung | Đáp án được chấp nhận |
+|---|---|---|
+| 1 | Tên ứng dụng ví | `Keplr` |
+| 2 | Lần đầu vào homepage, Unix giây | `1788604050` |
+| 3 | Thời điểm cài extension, Unix millisecond | `1788604175124` |
+| 4 | Tên người dùng đặt cho ví | `Vietdollar` |
+| 5 | Recovery phrase | `impose uniform fish special tip divert express increase push glide invite area` |
+| 6 | Đường dẫn miner | `/tmp/kworker1` |
+| 7 | Địa chỉ nhận tiền của miner | `425LXZNnbSkh1SyXdbBtvJdst6uab98knQi5BscyzkAKTPSnDDB4i2Ue5t9BxETLuuKNHnP4n8VjsaqtzprvGsf115Keabc` |
+| 8 | Chữ trong ảnh, bỏ khoảng trắng | `AIplsforgiveme` |
+
+Script [solve.py](solve.py) dưới đây tái hiện việc khôi phục hai đáp án mã hóa trực tiếp từ `mem.raw`, kiểm tra checksum rồi gửi đủ 8 đáp án. Các offset được cố định theo chính ảnh RAM của đề sau quá trình phân tích; script không tự tìm offset cho ảnh khác. Các đáp án về browser, đường dẫn và nội dung ảnh được điền từ bằng chứng đã phân tích ở bước 1.
+
+Cài thư viện và chạy trong thư mục chứa `mem.raw` cùng `solve.py`:
+
+```bash
+python3 -m pip install pycryptodome python-snappy mnemonic
+python3 solve.py
+```
+
+Toàn bộ script:
+
+```python
+#!/usr/bin/env python3
+"""Recover the two encrypted answers from mem.raw and complete the CTF quiz.
+Dependencies: pycryptodome python-snappy mnemonic
+Offsets below are file offsets in the supplied LiME image, discovered during analysis.
+"""
+from pathlib import Path
+import hashlib,json,re,socket,struct
+import snappy
+from Crypto.Cipher import AES
+from Crypto.Hash import keccak
+from mnemonic import Mnemonic
+
+BASE=Path(__file__).resolve().parent
+OUT=BASE/'recovered'
+OUT.mkdir(exist_ok=True)
+
+def recover():
+    with open(BASE/'mem.raw','rb') as f:
+        def read(offset,size):
+            f.seek(offset)
+            result=f.read(size)
+            assert len(result)==size
+            return result
+        # SQLite index leaf: 489 local bytes, 7-byte record header, 15-byte key.
+        local=read(0x5dd0e8fd,489)
+        overflow=read(0x5d1fe044,2518)
+        clone=snappy.decompress(local[22:]+overflow)
+        assert len(clone)==5192 and b'4532eb1bf34aa175' in clone
+        encrypted=bytes.fromhex(re.search(rb'__uint8array__([0-9a-f]+)',clone).group(1).decode())
+        derived=read(0x4f8dafe0,32)
+        cipher=bytes.fromhex('53e21003c11701f379068403f3ca21a9dfd3d310d49ce9b8d50ab56b23460801')
+        mac=hashlib.sha256(derived[16:]+cipher[16:]).hexdigest()
+        assert mac=='43f46daa1b4b46d5c301263984af14738c27f1551e97fff504b50184562294fd'
+        def aes(key,iv,data):
+            return AES.new(key,AES.MODE_CTR,nonce=b'',initial_value=bytes.fromhex(iv)).decrypt(data)
+        vault_key=aes(derived,'1679c885a9b62191443a1891922f9c2a',cipher)
+        counter=aes(vault_key,'8dc852f2ee34b2bad7de792db57c6f84',bytes.fromhex('463f2fc42804e54a6ea5cd7a73276a11'))
+        plain=json.loads(aes(vault_key,counter.hex(),encrypted))
+        phrase=plain['mnemonic']
+        assert Mnemonic('english').check(phrase)
+        # The mapped ciphertext page is nonresident; three other copies survive.
+        ciphertext=read(0x96107b20,96)
+        assert ciphertext==read(0x9be50b60,96)==read(0xa0c0dba0,96)
+    # Constants and mode recovered from SIGHUP handler at ELF offset 0xcaa60.
+    key=struct.unpack('<4I',bytes.fromhex('11273a4c59687d8e90abbccddeeff102'))
+    previous=bytes.fromhex('a1b2c3d4e5f60718')
+    payout_plain=b''
+    for off in range(0,96,8):
+        block=ciphertext[off:off+8]
+        a,b=struct.unpack('<2I',block)
+        total=0xc6ef3720
+        for _ in range(32):
+            b=(b-((((a<<4)^(a>>5))+a)^((total+key[(total>>11)&3])&0xffffffff)))&0xffffffff
+            total=(total-0x9e3779b9)&0xffffffff
+            a=(a-((((b<<4)^(b>>5))+b)^((total+key[total&3])&0xffffffff)))&0xffffffff
+        payout_plain+=bytes(x^y for x,y in zip(struct.pack('<2I',a,b),previous))
+        previous=block
+    padding=payout_plain[-1]
+    assert 1<=padding<=8 and payout_plain[-padding:]==bytes([padding])*padding
+    payout=payout_plain[:-padding].decode()
+    assert len(payout)==95
+    # Verify the Monero block-base58 encoding and Keccak checksum.
+    alphabet='123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
+    decoded=b''
+    for off in range(0,95,11):
+        block=payout[off:off+11]
+        number=0
+        for char in block:
+            number=number*58+alphabet.index(char)
+        decoded+=number.to_bytes(8 if len(block)==11 else 5,'big')
+    assert decoded[0]==18 and keccak.new(digest_bits=256,data=decoded[:-4]).digest()[:4]==decoded[-4:]
+    return phrase,payout
+
+def main():
+    phrase,payout=recover()
+    # Other answers are supported by the earlier browser, process, and image findings.
+    answers=['Keplr','1788604050','1788604175124','Vietdollar',phrase,'/tmp/kworker1',payout,'AIplsforgiveme']
+    (OUT/'accepted_answers.json').write_text(json.dumps(answers,indent=2)+'\n')
+    transcript=[]
+    with socket.create_connection(('113.20.103.55',1336),10) as connection:
+        connection.settimeout(15)
+        for answer in answers:
+            received=b''
+            while '➤'.encode() not in received:
+                chunk=connection.recv(65536)
+                if not chunk:
+                    raise RuntimeError('Challenge closed before all prompts')
+                received+=chunk
+            if b'Incorrect' in received:
+                raise RuntimeError(received.decode(errors='replace'))
+            transcript.append(received.decode(errors='replace'))
+            transcript.append(answer+'\n')
+            connection.sendall((answer+'\n').encode())
+        received=b''
+        while not re.search(rb'CSCV2026\{[^}]+\}',received):
+            chunk=connection.recv(65536)
+            if not chunk:
+                raise RuntimeError('Challenge closed without flag')
+            received+=chunk
+        transcript.append(received.decode(errors='replace'))
+    flag=re.search(rb'CSCV2026\{[^}]+\}',received).group().decode()
+    (OUT/'verified_replay.txt').write_text(''.join(transcript))
+    (OUT/'flag.txt').write_text(flag+'\n')
+    print(flag)
+
+if __name__=='__main__':
+    main()
+
+```
+
+Script đã được chạy lại trên một kết nối mới: cả 8 câu đều nhận `Excellent! Spot on.` và server trả về flag. Transcript được lưu tại [recovered/verified_replay.txt](recovered/verified_replay.txt).
+
+Các file hỗ trợ phân tích:
+
+| File | Công dụng |
+|---|---|
+| [recover_vault.py](recovered/recover_vault.py) | Tìm overflow page và ghép blob Snappy |
+| [scan_derived_key.c](recovered/scan_derived_key.c) | Quét khóa dẫn xuất trong RAM bằng MAC |
+| [decrypt_vault.py](recovered/decrypt_vault.py) | Giải mã record Keplr |
+| [verify_mnemonic.py](recovered/verify_mnemonic.py) | Kiểm tra BIP39 và đối chiếu khóa công khai |
+| [find_miner_dtb.py](recovered/find_miner_dtb.py) | Lần ngược page table của miner |
+| [dump_miner.py](recovered/dump_miner.py) | Dựng executable từ các segment được ánh xạ |
+| [payout_loader_disassembly.txt](recovered/payout_loader_disassembly.txt) | Disassembly hàm xử lý payout profile |
+| [decrypt_payout.py](recovered/decrypt_payout.py) | Giải mã địa chỉ Monero |
+
+Các script hỗ trợ dùng thêm những artifact trung gian trong `recovered/`; `solve.py` là script tái hiện độc lập từ `mem.raw`. Công cụ chính gồm Python 3, PyCryptodome, python-snappy, mnemonic, NumPy, radare2 và OpenSSL. Cơ chế mã hóa Keplr được đối chiếu với [XPI 0.13.37 do Mozilla phân phối](https://addons.mozilla.org/firefox/downloads/file/4836074/keplr-0.13.37.xpi).
+
+Trong quá trình phân tích, file backup chứa phrase giả và các ghi chú có nội dung giống chỉ dẫn hệ thống đều được xem như dữ liệu của đề. Kết quả cuối được xác nhận bằng kiểm tra mật mã và phản hồi của challenge.
+
+## Flag
+
+```text
+CSCV2026{ef14be7cddcc5adfbf0ac2dc68a690fa8f345731248ae69e2b8a43f8476f8331}
+```

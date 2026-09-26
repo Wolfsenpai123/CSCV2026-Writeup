@@ -1,0 +1,14 @@
+{
+  "handler_elf_offset": "0xcaa60",
+  "ciphertext_elf_offset": "0x246ae0",
+  "ciphertext_file_offsets": [
+    "0x96107b20",
+    "0x9be50b60",
+    "0xa0c0dba0"
+  ],
+  "ciphertext": "516c92390bd0ecd2ac5dcba0b100fd9a1ebc65f5045a03ec395e54966f5359fdd1c7e6c00173c98bf44cd6e86e2f6b2c74e8cd9b93a4a4cb84b2068bffe18580df10e36fec647d4e3995606cf8946a6fb3bc11a2f6088d40d54b4b1664d69723",
+  "key": "11273a4c59687d8e90abbccddeeff102",
+  "iv": "a1b2c3d4e5f60718",
+  "algorithm": "XTEA-CBC, 32 rounds, little-endian words, PKCS#7 padding",
+  "address": "425LXZNnbSkh1SyXdbBtvJdst6uab98knQi5BscyzkAKTPSnDDB4i2Ue5t9BxETLuuKNHnP4n8VjsaqtzprvGsf115Keabc"
+}

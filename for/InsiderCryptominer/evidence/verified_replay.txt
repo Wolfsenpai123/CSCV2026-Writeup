@@ -1,0 +1,35 @@
+🔮 [1/8]. What is the name of the cryptocurrency wallet installed in the browser by the insider?
+➤ Keplr
+✅ Excellent! Spot on.
+
+🔮 [2/8]. When did the insider first visit the cryptocurrency wallet's homepage? (Unix epoch in seconds)
+➤ 1788604050
+✅ Excellent! Spot on.
+
+🔮 [3/8]. What is the installation timestamp of the cryptocurrency wallet extension in epoch time (in milliseconds)?
+➤ 1788604175124
+✅ Excellent! Spot on.
+
+🔮 [4/8]. What is the user-defined name of the cryptocurrency wallet used by the insider?
+➤ Vietdollar
+✅ Excellent! Spot on.
+
+🔮 [5/8]. What is the recovery phrase (mnemonic) of the insider's cryptocurrency wallet?
+➤ impose uniform fish special tip divert express increase push glide invite area
+✅ Excellent! Spot on.
+
+🔮 [6/8]. What is the full path of the cryptomining binary executed on the system?
+➤ /tmp/kworker1
+✅ Excellent! Spot on.
+
+🔮 [7/8]. What is the cryptocurrency wallet address (payout address) used by the miner malware?
+➤ 425LXZNnbSkh1SyXdbBtvJdst6uab98knQi5BscyzkAKTPSnDDB4i2Ue5t9BxETLuuKNHnP4n8VjsaqtzprvGsf115Keabc
+✅ Excellent! Spot on.
+
+🔮 [8/8]. What is the text written on the image viewed by the insider in the browser? (without spaces)
+➤ AIplsforgiveme
+✅ Excellent! Spot on.
+
+
+🎉 Investigation Complete!
+🚩 Your Flag: CSCV2026{ef14be7cddcc5adfbf0ac2dc68a690fa8f345731248ae69e2b8a43f8476f8331}
