@@ -4,6 +4,8 @@
 
 [Đề bài và bộ dữ liệu gốc](./CHALLENGE.md) · [Tải VuVT.7z](https://github.com/Wolfsenpai123/CSCV2026-Writeup/releases/download/vuvt-challenge/VuVT.7z)
 
+[Hiện vật tải trực tiếp](./Source/README.md) · [Source các script phân tích](./Scripts/README.md)
+
 ## Thông tin chung
 
 - **Thể loại:** Windows Forensics, Network Forensics, Memory Forensics, Malware Analysis, Cryptography.

@@ -1,5 +1,7 @@
 # Attachment VuVT
 
+[Hiện vật chính tải trực tiếp](../Source/README.md) · [Source các script giải](../Scripts/README.md).
+
 Bộ đề gốc lớn hơn giới hạn tệp của Git thông thường, nên được lưu dưới dạng asset của Release trong cùng repo.
 
 - [VuVT.7z](https://github.com/Wolfsenpai123/CSCV2026-Writeup/releases/download/vuvt-challenge/VuVT.7z)

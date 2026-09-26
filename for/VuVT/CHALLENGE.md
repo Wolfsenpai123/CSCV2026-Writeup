@@ -34,6 +34,8 @@ Investigate to figure it out what happened and find the information to restore t
 
 ## Attachment
 
+[Hiện vật chính trong repo](./Source/README.md) · [Source script phân tích](./Scripts/README.md). Bộ đề gốc đầy đủ, gồm RAM, nằm trong Release bên dưới.
+
 - [Tải VuVT.7z — nguyên bộ đề gốc](https://github.com/Wolfsenpai123/CSCV2026-Writeup/releases/download/vuvt-challenge/VuVT.7z).
 - [Trang Release](https://github.com/Wolfsenpai123/CSCV2026-Writeup/releases/tag/vuvt-challenge).
 - Kích thước: **1.111.647.576 byte**, khoảng 1,04 GiB.
