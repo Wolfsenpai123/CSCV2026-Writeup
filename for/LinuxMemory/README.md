@@ -1,4 +1,4 @@
-# CSCV 2026 — Linux Memory Forensics — Full Write-up
+# CSCV 2026 — Insidotage — Full Write-up
 
 > Dành cho người mới: [Bài học nhập môn và phương pháp tư duy điều tra](./LESSON.md)
 
