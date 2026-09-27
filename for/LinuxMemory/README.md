@@ -25,6 +25,8 @@ Submit the flag with answers in the exact order shown above.
 
 **Tệp đề được cung cấp:** `dist/mem.dmp` và `dist/network.pcapng`.
 
+**Tải bộ đề gốc:** [Release Insidotage](https://github.com/Wolfsenpai123/CSCV2026-Writeup/releases/tag/insidotage-challenge) · [Hướng dẫn ghép, giải nén và SHA-256](./Attachment/README.md).
+
 ## Thông tin chung
 
 - **Giải:** CSCV 2026.
